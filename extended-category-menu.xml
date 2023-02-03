@@ -1,0 +1,672 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dleplugin>
+	<name>Extended category menu</name>
+	<description>Плагин расширяющий возможности формирования меню категорий при использовании тега {catmanu}</description>
+	<icon></icon>
+	<version>1.0.4</version>
+	<dleversion>14.3</dleversion>
+	<versioncompare>greater</versioncompare>
+	<upgradeurl></upgradeurl>
+	<filedelete>0</filedelete>
+	<needplugin></needplugin>
+	<mnotice>1</mnotice>
+	<mysqlinstall><![CDATA[]]></mysqlinstall>
+	<mysqlupgrade><![CDATA[]]></mysqlupgrade>
+	<mysqlenable><![CDATA[]]></mysqlenable>
+	<mysqldisable><![CDATA[]]></mysqldisable>
+	<mysqldelete><![CDATA[]]></mysqldelete>
+	<phpinstall><![CDATA[]]></phpinstall>
+	<phpupgrade><![CDATA[]]></phpupgrade>
+	<phpenable><![CDATA[]]></phpenable>
+	<phpdisable><![CDATA[]]></phpdisable>
+	<phpdelete><![CDATA[@unlink( "engine/data/order_category.php" );]]></phpdelete>
+	<notice><![CDATA[<p>@<a href="https://t.me/TeraMoune" target="_blank">TeraMoune</a></p>
+<details><summary style="color:#ff720e;font-weight:500" role="button">Click here!</summary>Для изменение порядка сортировки меню, нужно создать файл по пути [b]engine/data/order_category.php[/b] с содержимым ниже.
+
+<details><summary style="color:#ff720e;font-weight:500" role="button">Содержимое order_category.php</summary>[code]<?php
+$order_category_ex = array (
+    'search'       => 'name', //Раздел поиска новостей
+    'addnews'      => 'name', //Разделы добавления новостей
+    'adm_category' => 'name' //Раздел категорий в админке
+);
+?>[/code]</details>
+<ul><li>Можно менять порядок сортировки по нескольким полям в отдельных разделах в [b]$order_category_ex[/b] массиве. ([b]name[/b], [b]newscount[/b], [b]rating_sum[/b], [b]id[/b], [b]comm_sum[/b], [b]newsread_sum[/b], [b]votenum_sum[/b])</li><li>Для изменения порядка сортировки у тега [b]{catmenu}[/b] можно использовать параметр [b]sort[/b] с одним из этих значений.</li><li>Тегу [b]{catmenu}[/b] добавлен параметр [b]limit[/b] ограничивающий количество категорий.</li><li>В шаблонах меню можно использовать новые теги: [b]{rating_sum}[/b], [b]{comment_sum}[/b], [b]{newsread_sum}[/b], [b]{vote_sum}[/b]. Которые выводят общее значение показателей.</li><li>Два блочных тега [b][not-category=X] ... [not-category][/b] и [b][category=X] ... [/category][/b] используемые в рамках тега [b][item][/b].</li></ul></details>
+<details><summary style="color:green;font-weight:500" role="button">[b]Для благодарности[/b]</summary><ul style="margin-bottom: 0;"><li>[b]<span style="color:rgb(127,43,253);">Ю</span>Money[/b]: 4100115063692304</li><li>[b]<span style="color:#FF8C00;">Qiwi</span> nickname[/b]: TERAMOUNE</li><li>[b]<span style="color:#006cb4;">WMZ[/b]</span>: Z990082286464</li></ul></details>
+<p>Другие плагины на <a href="https://github.com/TeraMoune" target="_blank">[b]GitHub[/b]</a></p>]]></notice>
+	<file name="engine/init.php">
+		<operation action="replace">
+			<searchcode><![CDATA[$db->query( "SELECT category, COUNT(*) AS count FROM " . PREFIX . "_post WHERE approve=1" . $where_date . " GROUP BY category" );]]></searchcode>
+			<replacecode><![CDATA[$db->query( "SELECT p.category, COUNT(*) AS count, sum(p.comm_num) AS comm_sum, sum(e.rating) AS rating_sum, sum(e.news_read) AS newsread_sum, sum(e.vote_num) AS votenum_sum FROM " . PREFIX . "_post p LEFT JOIN " . PREFIX . "_post_extras e ON (p.id=e.news_id) WHERE approve=1" . $where_date . " GROUP BY category" );]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if(!isset($news_count_in_array[$value])) $news_count_in_array[$value] = $row['count'];
+else $news_count_in_array[$value] = $news_count_in_array[$value] + $row['count'];]]></searchcode>
+			<replacecode><![CDATA[if(!isset($news_count_in_array[$value])) $news_count_in_array[$value] = array('newscount' => $row['count'], 'rating_sum' => $row['rating_sum'], 'comm_sum' => $row['comm_sum'], 'newsread_sum' => $row['newsread_sum'], 'votenum_sum' => $row['votenum_sum']);
+else {
+	$news_count_in_array[$value]['newscount'] 		= $news_count_in_array[$value]['newscount'] + $row['count'];	
+	$news_count_in_array[$value]['rating_sum'] 		= $news_count_in_array[$value]['rating_sum'] + $row['rating_sum'];
+  	$news_count_in_array[$value]['comm_sum'] 		= $news_count_in_array[$value]['comm_sum'] + $row['comm_sum'];
+  	$news_count_in_array[$value]['newsread_sum'] 	= $news_count_in_array[$value]['newsread_sum'] + $row['newsread_sum'];
+  	$news_count_in_array[$value]['votenum_sum'] 	= $news_count_in_array[$value]['votenum_sum'] + $row['votenum_sum'];
+}]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if(!isset($news_count_in_array[$temp_parent])) $news_count_in_array[$temp_parent] = $row['count'];
+else $news_count_in_array[$temp_parent] = $news_count_in_array[$temp_parent] + $row['count'];]]></searchcode>
+			<replacecode><![CDATA[if(!isset($news_count_in_array[$temp_parent])) $news_count_in_array[$temp_parent] = array('newscount' => $row['count'], 'rating_sum' => $row['rating_sum'], 'comm_sum' => $row['comm_sum'], 'newsread_sum' => $row['newsread_sum'], 'votenum_sum' => $row['votenum_sum']);
+else {
+	$news_count_in_array[$temp_parent]['newscount'] 	= $news_count_in_array[$temp_parent]['newscount'] + $row['count'];
+	$news_count_in_array[$temp_parent]['rating_sum'] 	= $news_count_in_array[$temp_parent]['rating_sum'] + $row['rating_sum'];
+  	$news_count_in_array[$temp_parent]['comm_sum'] 		= $news_count_in_array[$temp_parent]['comm_sum'] + $row['comm_sum'];
+  	$news_count_in_array[$temp_parent]['newsread_sum'] 	= $news_count_in_array[$temp_parent]['newsread_sum'] + $row['newsread_sum'];
+  	$news_count_in_array[$temp_parent]['votenum_sum'] 	= $news_count_in_array[$temp_parent]['votenum_sum'] + $row['votenum_sum'];
+}]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[if($cat_info[$key]['id']) $cat_info[$key]['newscount'] = $value;]]></searchcode>
+			<replacecode><![CDATA[if($cat_info[$key]['id']) {
+	$cat_info[$key]['newscount'] 	= $value['newscount'];
+	$cat_info[$key]['rating_sum'] 	= $value['rating_sum'];
+  	$cat_info[$key]['comm_sum'] 	= $value['comm_sum'];
+  	$cat_info[$key]['newsread_sum'] = $value['newsread_sum'];
+  	$cat_info[$key]['votenum_sum'] 	= $value['votenum_sum'];
+}]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="after">
+			<searchcode><![CDATA[$cat_info[$row['id']]['newscount'] = 0;]]></searchcode>
+			<replacecode><![CDATA[$cat_info[$row['id']]['rating_sum'] 	= 0;
+$cat_info[$row['id']]['comm_sum'] 		= 0;
+$cat_info[$row['id']]['newsread_sum'] 	= 0;
+$cat_info[$row['id']]['votenum_sum'] 	= 0;]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+	</file>
+	<file name="engine/classes/templates.class.php">
+		<operation action="before">
+			<searchcode><![CDATA[if( $row['icon'] ) {]]></searchcode>
+			<replacecode><![CDATA[$GLOBALS['_cm_id'] 	= $row['id'];
+$template 			= str_replace( "{rating_sum}", intval($row['rating_sum']), $template );
+$template 			= str_replace( "{comment_sum}", intval($row['comm_sum']), $template );
+$template 			= str_replace( "{newsread_sum}", intval($row['newsread_sum']), $template );
+$template 			= str_replace( "{vote_sum}", intval($row['votenum_sum']), $template );
+
+if (stripos ( $template, "[category=" ) !== false) {
+	$template = preg_replace_callback ( "#\\[(category)=(.+?)\\](.*?)\\[/category\\]#is", "check_category_menu", $template );
+}
+
+if (stripos ( $template, "[not-category=" ) !== false) {
+	$template = preg_replace_callback ( "#\\[(not-category)=(.+?)\\](.*?)\\[/not-category\\]#is", "check_category_menu", $template );
+}
+
+unset($GLOBALS['_cm_id']);]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="after">
+			<searchcode><![CDATA[if( $config['category_newscount'] ) $cache_prefix = "news"; else $cache_prefix = "catmenu";]]></searchcode>
+			<replacecode><![CDATA[if( preg_match( "#sort=['\"](.+?)['\"]#i", $param_str, $match ) ) {
+  
+  	if( in_array($match[1], ['name', 'newscount', 'rating_sum', 'comm_sum', 'newsread_sum', 'votenum_sum', 'id']) ) {
+      	if( function_exists("cmp_{$match[1]}") ) uasort ($catlist, "cmp_{$match[1]}");
+    }
+
+}]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="before">
+			<searchcode><![CDATA[if( preg_match( "#subcat=['\"](.+?)['\"]#i", $param_str, $match ) ) {]]></searchcode>
+			<replacecode><![CDATA[if( preg_match( "#limit=['\"](.+?)['\"]#i", $param_str, $match ) ) {
+  
+	$custom_limit = intval($match[1]);
+  
+}]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="before">
+			<searchcode><![CDATA[if( preg_match( "#template=['\"](.+?)['\"]#i", $param_str, $match ) ) {]]></searchcode>
+			<replacecode><![CDATA[if( $custom_limit ) {
+			
+	$catlist = array_splice($catlist, 0, $custom_limit);
+				
+}]]></replacecode>
+			<searchcount>1</searchcount>
+			<replacecount>2</replacecount>
+			<enabled>1</enabled>
+		</operation>
+	</file>
+	<file name="engine/modules/search.php">
+		<operation action="before">
+			<searchcode><![CDATA[$cats = "<select name=\"catlist[]\" id=\"catlist\" multiple=\"multiple\">";]]></searchcode>
+			<replacecode><![CDATA[//Переменная для сортировки
+$sort_category = $order_category_ex['search'] ? $order_category_ex['search'] : 'name';]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+	</file>
+	<file name="engine/modules/functions.php">
+		<operation action="replace">
+			<searchcode><![CDATA[function CategoryNewsSelection($categoryid = 0, $parentid = 0, $nocat = TRUE, $sublevelmarker = '', $returnstring = '') {
+	global $cat_info, $user_group, $member_id, $dle_module;]]></searchcode>
+			<replacecode><![CDATA[function CategoryNewsSelection($categoryid = 0, $parentid = 0, $nocat = TRUE, $sublevelmarker = '', $returnstring = '') {
+	global $cat_info, $user_group, $member_id, $dle_module, $sort_category;
+	
+  	if( in_array($sort_category, ['name', 'newscount', 'rating_sum', 'comm_sum', 'newsread_sum', 'votenum_sum', 'id']) ) {
+      	if( function_exists("cmp_{$sort_category}") ) uasort ($cat_info, "cmp_{$sort_category}");
+    }
+
+  	unset($sort_category);]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="before">
+			<searchcode><![CDATA[if ( isset($config['auth_domain']) AND $config['auth_domain'] ) {]]></searchcode>
+			<replacecode><![CDATA[@include_once (ENGINE_DIR . '/data/order_category.php');
+
+function check_category_menu( $matches=array() ) {
+	global $_cm_id;
+
+	$block 		= $matches[3];
+	$category 	= $_cm_id;
+	$temp_array = array();
+	$matches[2] = str_replace(" ", "", $matches[2] );
+	$matches[2] = explode (',', $matches[2]);
+
+	foreach ($matches[2] as $value) {
+
+		if( count(explode('-', $value)) == 2 ) $temp_array[] = get_mass_cats($value);
+		else $temp_array[] = intval($value);
+
+	}
+
+	$temp_array = implode(',', $temp_array);
+
+	if ($matches[1] == "category") $action = true; else $action = false;
+	
+	$cats 		= explode( ',', $temp_array );
+	$category 	= explode( ',', $category );
+	$found 		= false;
+	
+	foreach ( $category as $element ) {
+		
+		if( $action ) {
+			
+			if( in_array( $element, $cats ) ) {
+				
+				return $block;
+			}
+		
+		} else {
+			
+			if( in_array( $element, $cats ) ) {
+				$found = true;
+			}
+		
+		}
+	
+	}
+
+	if ( !$action AND !$found ) {	
+
+		return $block;
+	}
+
+	return "";
+
+}
+
+function cmp_id($a, $b) {
+	
+    if ($a['id'] == $b['id']) {
+        return 0;
+    }
+	
+    return ($a['id'] < $b['id']) ? -1 : 1;
+}
+
+function cmp_rating_sum($a, $b) {
+	
+    if ($a['rating_sum'] == $b['rating_sum']) {
+        return 0;
+    }
+	
+    return ($a['rating_sum'] > $b['rating_sum']) ? -1 : 1;
+}
+
+function cmp_newscount($a, $b) {
+	
+    if ($a['newscount'] == $b['newscount']) {
+        return 0;
+    }
+	
+    return ($a['newscount'] > $b['newscount']) ? -1 : 1;
+}
+
+function cmp_name($a, $b) {
+	
+    if ($a['name'] == $b['name']) {
+        return 0;
+    }
+	
+    return ($a['name'] < $b['name']) ? -1 : 1;
+}
+
+function cmp_comm_sum($a, $b) {
+	
+    if ($a['comm_sum'] == $b['comm_sum']) {
+        return 0;
+    }
+	
+    return ($a['comm_sum'] < $b['comm_sum']) ? -1 : 1;
+}
+
+function cmp_newsread_sum($a, $b) {
+	
+    if ($a['newsread_sum'] == $b['newsread_sum']) {
+        return 0;
+    }
+	
+    return ($a['newsread_sum'] < $b['newsread_sum']) ? -1 : 1;
+}
+
+function cmp_votenum_sum($a, $b) {
+	
+    if ($a['votenum_sum'] == $b['votenum_sum']) {
+        return 0;
+    }
+	
+    return ($a['votenum_sum'] < $b['votenum_sum']) ? -1 : 1;
+}]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+	</file>
+	<file name="engine/modules/addnews.php">
+		<operation action="before">
+			<searchcode><![CDATA[$categories_list = CategoryNewsSelection( $cat_list, 0 );]]></searchcode>
+			<replacecode><![CDATA[//Переменная для сортировки
+$sort_category = $order_category_ex['addnews'] ? $order_category_ex['addnews'] : 'name';]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+		<operation action="before">
+			<searchcode><![CDATA[if( isset($_GET['category']) ) {]]></searchcode>
+			<replacecode><![CDATA[//Переменная для сортировки
+$sort_category = $order_category_ex['addnews'] ? $order_category_ex['addnews'] : 'name';]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+	</file>
+	<file name="engine/inc/categories.php">
+		<operation action="after">
+			<searchcode><![CDATA[$cat_info[$row['id']] = array ();]]></searchcode>
+			<replacecode><![CDATA[$cat_info[$row['id']]['newscount'] 		= 0;
+$cat_info[$row['id']]['rating_sum'] 	= 0;
+$cat_info[$row['id']]['comm_sum'] 		= 0;
+$cat_info[$row['id']]['newsread_sum'] 	= 0;
+$cat_info[$row['id']]['votenum_sum'] 	= 0;]]></replacecode>
+			<enabled>1</enabled>
+			<dleversion>15.2</dleversion>
+			<versioncompare>less</versioncompare>
+		</operation>
+		<operation action="before">
+			<searchcode><![CDATA[$result = "";]]></searchcode>
+			<replacecode><![CDATA[function create_cache($prefix, $cache_text, $cache_id = false, $member_prefix = false) {
+	global $config, $is_logged, $member_id, $dlefastcache;
+	
+	if( !$config['allow_cache'] ) return false;
+	
+	if( $is_logged ) $end_file = $member_id['user_group'];
+	else $end_file = "0";
+	
+	if( ! $cache_id ) {
+		
+		$key = $prefix;
+		
+	} else {
+		
+		$cache_id = md5( $cache_id );
+		
+		if( $member_prefix ) $key = $prefix . "_" . $cache_id . "_" . $end_file;
+		else $key = $prefix . "_" . $cache_id;
+	
+	}
+	
+	if($cache_text === false) $cache_text = '';
+
+	if( $config['cache_type'] ) {
+		if( $dlefastcache->connection > 0 ) {
+			$dlefastcache->set( $key, $cache_text );
+			return true;
+		}
+	}
+
+	file_put_contents (ENGINE_DIR . "/cache/" . $key . ".tmp", $cache_text, LOCK_EX);
+	@chmod( ENGINE_DIR . "/cache/" . $key . ".tmp", 0666 );
+	
+	return true;
+	
+}
+	
+function dle_cache($prefix, $cache_id = false, $member_prefix = false) {
+	global $config, $is_logged, $member_id, $dlefastcache;
+	
+	if( !$config['allow_cache'] ) return false;
+
+	$config['clear_cache'] = (intval($config['clear_cache']) > 1) ? intval($config['clear_cache']) : 0;
+
+	if( $is_logged ) $end_file = $member_id['user_group'];
+	else $end_file = "0";
+	
+	if( ! $cache_id ) {
+		
+		$key = $prefix;
+	
+	} else {
+		
+		$cache_id = md5( $cache_id );
+		
+		if( $member_prefix ) $key = $prefix . "_" . $cache_id . "_" . $end_file;
+		else $key = $prefix . "_" . $cache_id;
+	
+	}
+	
+	if( $config['cache_type'] ) {
+		if( $dlefastcache->connection > 0 ) {
+			return $dlefastcache->get($key);
+		}
+	}
+
+	$buffer = @file_get_contents( ENGINE_DIR . "/cache/" . $key . ".tmp" );
+
+	if ( $buffer !== false AND $config['clear_cache'] ) {
+
+		$file_date = @filemtime( ENGINE_DIR . "/cache/" . $key . ".tmp" );
+		$file_date = time()-$file_date;
+
+		if ( $file_date > ( $config['clear_cache'] * 60 ) ) {
+			$buffer = false;
+			@unlink( ENGINE_DIR . "/cache/" . $key . ".tmp" );
+		}
+
+		return $buffer;
+
+	} else return $buffer;
+
+}
+
+$news_count_in_array = dle_cache ( "news", "newscountcacheincats" );
+	
+if( $news_count_in_array ) {
+	
+		$news_count_in_array = json_decode($news_count_in_array, true);
+	
+		if ( !is_array($news_count_in_array) ) $news_count_in_array = array();
+	
+} else {
+	
+	$news_count_in_array = array();
+		
+	if( $config['no_date'] AND !$config['news_future'] ) {
+		$thisdate 	= date( "Y-m-d H:i:s", $_TIME );
+		$where_date = " AND date < '" . $thisdate . "'";
+	} else $where_date = "";
+
+  	$db->query( "SELECT p.category, COUNT(*) AS count, sum(p.comm_num) AS comm_sum, sum(e.rating) AS rating_sum, sum(e.news_read) AS newsread_sum, sum(e.vote_num) AS votenum_sum FROM " . PREFIX . "_post p LEFT JOIN " . PREFIX . "_post_extras e ON (p.id=e.news_id) WHERE approve=1" . $where_date . " GROUP BY category" );
+		
+	while ( $row = $db->get_row() ) {
+			
+		if(!$row['category']) continue;
+		
+		$cat_array = $temp_cat_array = explode(",", $row['category']);
+			
+		foreach ( $temp_cat_array as $value ) {
+				
+            if(!isset($news_count_in_array[$value])) $news_count_in_array[$value] = array('newscount' => $row['count'], 'rating_sum' => $row['rating_sum'], 'comm_sum' => $row['comm_sum'], 'newsread_sum' => $row['newsread_sum'], 'votenum_sum' => $row['votenum_sum']);
+            else {
+                $news_count_in_array[$value]['newscount'] 		= $news_count_in_array[$value]['newscount'] + $row['count'];	
+                $news_count_in_array[$value]['rating_sum'] 		= $news_count_in_array[$value]['rating_sum'] + $row['rating_sum'];
+                $news_count_in_array[$value]['comm_sum'] 		= $news_count_in_array[$value]['comm_sum'] + $row['comm_sum'];
+                $news_count_in_array[$value]['newsread_sum'] 	= $news_count_in_array[$value]['newsread_sum'] + $row['newsread_sum'];
+                $news_count_in_array[$value]['votenum_sum'] 	= $news_count_in_array[$value]['votenum_sum'] + $row['votenum_sum'];
+            }
+		
+			$sub_count = $config['show_sub_cats'];
+				
+			if ( $cat_info[$cat_info[$value]['parentid']]['show_sub'] ) {
+	
+				if (  $cat_info[$cat_info[$value]['parentid']]['show_sub'] == 1 ) $sub_count = 1; else $sub_count = 0;
+	
+			}
+	
+			if( $sub_count ) {
+
+				$temp_parent = $cat_info[$value]['parentid'];
+
+				while ( $temp_parent ) {
+
+					if( !in_array($temp_parent, $cat_array) ) {
+					
+                        if(!isset($news_count_in_array[$temp_parent])) $news_count_in_array[$temp_parent] = array('newscount' => $row['count'], 'rating_sum' => $row['rating_sum'], 'comm_sum' => $row['comm_sum'], 'newsread_sum' => $row['newsread_sum'], 'votenum_sum' => $row['votenum_sum']);
+                        else {
+                            $news_count_in_array[$temp_parent]['newscount'] 	= $news_count_in_array[$temp_parent]['newscount'] + $row['count'];
+                            $news_count_in_array[$temp_parent]['rating_sum'] 	= $news_count_in_array[$temp_parent]['rating_sum'] + $row['rating_sum'];
+                            $news_count_in_array[$temp_parent]['comm_sum'] 		= $news_count_in_array[$temp_parent]['comm_sum'] + $row['comm_sum'];
+                            $news_count_in_array[$temp_parent]['newsread_sum'] 	= $news_count_in_array[$temp_parent]['newsread_sum'] + $row['newsread_sum'];
+                            $news_count_in_array[$temp_parent]['votenum_sum'] 	= $news_count_in_array[$temp_parent]['votenum_sum'] + $row['votenum_sum'];
+                        }
+							
+						$cat_array[] = $temp_parent;
+				
+					}
+
+					$temp_parent = $cat_info[$temp_parent]['parentid'];
+				}
+			}
+
+		}
+			
+	}
+		
+	create_cache ( "news", json_encode($news_count_in_array), "newscountcacheincats" );
+	unset($temp_parent, $temp_cat_array, $cat_array);
+}
+
+foreach ( $news_count_in_array as $key => $value ) {
+    if($cat_info[$key]['id']) {
+        $cat_info[$key]['newscount'] 	= $value['newscount'];
+        $cat_info[$key]['rating_sum'] 	= $value['rating_sum'];
+        $cat_info[$key]['comm_sum'] 	= $value['comm_sum'];
+        $cat_info[$key]['newsread_sum'] = $value['newsread_sum'];
+        $cat_info[$key]['votenum_sum'] 	= $value['votenum_sum'];
+    }
+}
+	
+unset($news_count_in_array);
+
+if( in_array($order_category_ex['adm_category'], ['name', 'newscount', 'rating_sum', 'comm_sum', 'newsread_sum', 'votenum_sum', 'id']) ) {
+   	if( function_exists("cmp_{$order_category_ex['adm_category']}") ) uasort ($cat_info, "cmp_{$order_category_ex['adm_category']}");
+}
+
+/*if( $order_category_ex['adm_category'] == "name" ) uasort ($cat_info, "cmp_name");
+elseif( $order_category_ex['adm_category'] == "newscount" ) uasort ($cat_info, "cmp_newscount"); 
+elseif( $order_category_ex['adm_category'] == "rating_sum" ) uasort ($cat_info, "cmp_rating");
+elseif( $order_category_ex['adm_category'] == "id" ) uasort ($cat_info, "cmp_id");*/]]></replacecode>
+			<enabled>1</enabled>
+			<dleversion>15.2</dleversion>
+			<versioncompare>less</versioncompare>
+		</operation>
+		<operation action="before">
+			<searchcode><![CDATA[$result = "";]]></searchcode>
+			<replacecode><![CDATA[$news_count_in_array = dle_cache ( "news", "newscountcacheincats" );
+	
+if( $news_count_in_array ) {
+	
+		$news_count_in_array = json_decode($news_count_in_array, true);
+	
+		if ( !is_array($news_count_in_array) ) $news_count_in_array = array();
+	
+} else {
+	
+	$news_count_in_array = array();
+		
+	if( $config['no_date'] AND !$config['news_future'] ) {
+		$thisdate 	= date( "Y-m-d H:i:s", $_TIME );
+		$where_date = " AND date < '" . $thisdate . "'";
+	} else $where_date = "";
+
+	$db->query( "SELECT p.category, COUNT(*) AS count, sum(p.comm_num) AS comm_sum, sum(e.rating) AS rating_sum, sum(e.news_read) AS newsread_sum, sum(e.vote_num) AS votenum_sum FROM " . PREFIX . "_post p LEFT JOIN " . PREFIX . "_post_extras e ON (p.id=e.news_id) WHERE approve=1" . $where_date . " GROUP BY category" );	
+  
+	while ( $row = $db->get_row() ) {
+			
+		if(!$row['category']) continue;
+		
+		$cat_array = $temp_cat_array = explode(",", $row['category']);
+			
+		foreach ( $temp_cat_array as $value ) {
+				
+            if(!isset($news_count_in_array[$value])) $news_count_in_array[$value] = array('newscount' => $row['count'], 'rating_sum' => $row['rating_sum'], 'comm_sum' => $row['comm_sum'], 'newsread_sum' => $row['newsread_sum'], 'votenum_sum' => $row['votenum_sum']);
+            else {
+                $news_count_in_array[$value]['newscount'] 		= $news_count_in_array[$value]['newscount'] + $row['count'];	
+                $news_count_in_array[$value]['rating_sum'] 		= $news_count_in_array[$value]['rating_sum'] + $row['rating_sum'];
+                $news_count_in_array[$value]['comm_sum'] 		= $news_count_in_array[$value]['comm_sum'] + $row['comm_sum'];
+                $news_count_in_array[$value]['newsread_sum'] 	= $news_count_in_array[$value]['newsread_sum'] + $row['newsread_sum'];
+                $news_count_in_array[$value]['votenum_sum'] 	= $news_count_in_array[$value]['votenum_sum'] + $row['votenum_sum'];
+            }
+		
+			$sub_count = $config['show_sub_cats'];
+				
+			if ( $cat_info[$cat_info[$value]['parentid']]['show_sub'] ) {
+	
+				if (  $cat_info[$cat_info[$value]['parentid']]['show_sub'] == 1 ) $sub_count = 1; else $sub_count = 0;
+	
+			}
+	
+			if( $sub_count ) {
+
+				$temp_parent = $cat_info[$value]['parentid'];
+
+				while ( $temp_parent ) {
+
+					if( !in_array($temp_parent, $cat_array) ) {
+					
+                        if(!isset($news_count_in_array[$temp_parent])) $news_count_in_array[$temp_parent] = array('newscount' => $row['count'], 'rating_sum' => $row['rating_sum'], 'comm_sum' => $row['comm_sum'], 'newsread_sum' => $row['newsread_sum'], 'votenum_sum' => $row['votenum_sum']);
+                        else {
+                            $news_count_in_array[$temp_parent]['newscount'] 	= $news_count_in_array[$temp_parent]['newscount'] + $row['count'];
+                            $news_count_in_array[$temp_parent]['rating_sum'] 	= $news_count_in_array[$temp_parent]['rating_sum'] + $row['rating_sum'];
+                            $news_count_in_array[$temp_parent]['comm_sum'] 		= $news_count_in_array[$temp_parent]['comm_sum'] + $row['comm_sum'];
+                            $news_count_in_array[$temp_parent]['newsread_sum'] 	= $news_count_in_array[$temp_parent]['newsread_sum'] + $row['newsread_sum'];
+                            $news_count_in_array[$temp_parent]['votenum_sum'] 	= $news_count_in_array[$temp_parent]['votenum_sum'] + $row['votenum_sum'];
+                        }
+							
+						$cat_array[] = $temp_parent;
+				
+					}
+
+					$temp_parent = $cat_info[$temp_parent]['parentid'];
+				}
+			}
+
+		}
+			
+	}
+		
+	create_cache ( "news", json_encode($news_count_in_array), "newscountcacheincats" );
+	unset($temp_parent, $temp_cat_array, $cat_array);
+}
+
+foreach ( $news_count_in_array as $key => $value ) {
+    if($cat_info[$key]['id']) {
+        $cat_info[$key]['newscount'] 	= $value['newscount'];
+        $cat_info[$key]['rating_sum'] 	= $value['rating_sum'];
+        $cat_info[$key]['comm_sum'] 	= $value['comm_sum'];
+        $cat_info[$key]['newsread_sum'] = $value['newsread_sum'];
+        $cat_info[$key]['votenum_sum'] 	= $value['votenum_sum'];
+    }
+}
+	
+unset($news_count_in_array);
+
+if( in_array($order_category_ex['adm_category'], ['name', 'newscount', 'rating_sum', 'comm_sum', 'newsread_sum', 'votenum_sum', 'id']) ) {
+   	if( function_exists("cmp_{$order_category_ex['adm_category']}") ) uasort ($cat_info, "cmp_{$order_category_ex['adm_category']}");
+}]]></replacecode>
+			<enabled>1</enabled>
+			<dleversion>15.3</dleversion>
+			<versioncompare>greater</versioncompare>
+		</operation>
+		<operation action="replace">
+			<searchcode><![CDATA[</b> {$link}]]></searchcode>
+			<replacecode><![CDATA[</b> {$link} ({$cat_info[$id]['newscount']})]]></replacecode>
+			<enabled>1</enabled>
+			<dleversion>15.2</dleversion>
+			<versioncompare>less</versioncompare>
+		</operation>
+	</file>
+	<file name="engine/inc/include/functions.inc.php">
+		<operation action="before">
+			<searchcode><![CDATA[if ( isset($config['auth_domain']) AND $config['auth_domain'] ) {]]></searchcode>
+			<replacecode><![CDATA[@include_once (ENGINE_DIR . '/data/order_category.php');
+
+function cmp_id($a, $b) {
+	
+    if ($a['id'] == $b['id']) {
+        return 0;
+    }
+	
+    return ($a['id'] < $b['id']) ? -1 : 1;
+}
+
+function cmp_rating_sum($a, $b) {
+	
+    if ($a['rating_sum'] == $b['rating_sum']) {
+        return 0;
+    }
+	
+    return ($a['rating_sum'] > $b['rating_sum']) ? -1 : 1;
+}
+
+function cmp_newscount($a, $b) {
+	
+    if ($a['newscount'] == $b['newscount']) {
+        return 0;
+    }
+	
+    return ($a['newscount'] > $b['newscount']) ? -1 : 1;
+}
+
+function cmp_name($a, $b) {
+	
+    if ($a['name'] == $b['name']) {
+        return 0;
+    }
+	
+    return ($a['name'] < $b['name']) ? -1 : 1;
+}
+
+function cmp_comm_sum($a, $b) {
+	
+    if ($a['comm_sum'] == $b['comm_sum']) {
+        return 0;
+    }
+	
+    return ($a['comm_sum'] < $b['comm_sum']) ? -1 : 1;
+}
+
+function cmp_newsread_sum($a, $b) {
+	
+    if ($a['newsread_sum'] == $b['newsread_sum']) {
+        return 0;
+    }
+	
+    return ($a['newsread_sum'] < $b['newsread_sum']) ? -1 : 1;
+}
+
+function cmp_votenum_sum($a, $b) {
+	
+    if ($a['votenum_sum'] == $b['votenum_sum']) {
+        return 0;
+    }
+	
+    return ($a['votenum_sum'] < $b['votenum_sum']) ? -1 : 1;
+}]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+	</file>
+</dleplugin>
