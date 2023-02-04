@@ -4,7 +4,7 @@
 	<description>Плагин расширяющий возможности формирования меню категорий при использовании тега {catmanu}</description>
 	<icon></icon>
 	<version>1.0.4</version>
-	<dleversion>14.3</dleversion>
+	<dleversion>15.1</dleversion>
 	<versioncompare>greater</versioncompare>
 	<upgradeurl></upgradeurl>
 	<filedelete>0</filedelete>
