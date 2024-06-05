@@ -21,7 +21,7 @@
 	<phpdisable><![CDATA[]]></phpdisable>
 	<phpdelete><![CDATA[@unlink( "engine/data/order_category.php" );]]></phpdelete>
 	<notice><![CDATA[<p>@<a href="https://t.me/TeraMoune" target="_blank">TeraMoune</a></p>
-<details><summary style="color:#ff720e;font-weight:500" role="button">Click here!</summary>Для изменение порядка сортировки меню, нужно создать файл по пути [b]engine/data/order_category.php[/b] с содержимым ниже.
+<details><summary style="color:#ff720e;font-weight:500" role="button">Click here!</summary>Для изменение порядка сортировки меню в разделах, нужно создать файл по пути [b]engine/data/order_category.php[/b] с содержимым ниже.
 
 <details><summary style="color:#ff720e;font-weight:500" role="button">Содержимое order_category.php</summary>[code]<?php
 $order_category_ex = array (
@@ -31,8 +31,7 @@ $order_category_ex = array (
 );
 ?>[/code]</details>
 <ul><li>Можно менять порядок сортировки по нескольким полям в отдельных разделах в [b]$order_category_ex[/b] массиве. ([b]name[/b], [b]newscount[/b], [b]rating_sum[/b], [b]id[/b], [b]comm_sum[/b], [b]newsread_sum[/b], [b]votenum_sum[/b])</li><li>Для изменения порядка сортировки у тега [b]{catmenu}[/b] можно использовать параметр [b]sort[/b] с одним из этих значений.</li><li>Тегу [b]{catmenu}[/b] добавлен параметр [b]limit[/b] ограничивающий количество категорий.</li><li>В шаблонах меню можно использовать новые теги: [b]{rating_sum}[/b], [b]{comment_sum}[/b], [b]{newsread_sum}[/b], [b]{vote_sum}[/b]. Которые выводят общее значение показателей.</li><li>Два блочных тега [b][not-category=X] ... [not-category][/b] и [b][category=X] ... [/category][/b] используемые в рамках тега [b][item][/b].</li></ul></details>
-<details><summary style="color:green;font-weight:500" role="button">[b]Для благодарности[/b]</summary><ul style="margin-bottom: 0;"><li>[b]<span style="color:rgb(127,43,253);">Ю</span>Money[/b]: 4100115063692304</li><li>[b]<span style="color:#006eff;">USDT trc20</span>[/b]: TMAZuEYQKwsacgEMsxDUYjTiMtdymNtRZP</li><li>[b]<span style="color:#049700;">MIR</span>[/b]: 2204 1202 0047 2997</li></ul></details>
-<p>Другие плагины на <a href="https://github.com/TeraMoune" target="_blank">[b]GitHub[/b]</a></p>]]></notice>
+<details><summary style="color:green;font-weight:500" role="button">[b]Для благодарности[/b]</summary><ul style="margin-bottom: 0;"><li>[b]<span style="color:rgb(127,43,253);">Ю</span>Money[/b]: 4100115063692304</li><li>[b]<span style="color:#006eff;">USDT trc20</span>[/b]: TMAZuEYQKwsacgEMsxDUYjTiMtdymNtRZP</li><li>[b]<span style="color:#049700;">MIR</span>[/b]: 2204 1202 0047 2997</li></ul></details>]]></notice>
 	<file name="engine/init.php">
 		<operation action="replace">
 			<searchcode><![CDATA[$db->query( "SELECT category, COUNT(*) AS count FROM " . PREFIX . "_post WHERE approve=1" . $where_date . " GROUP BY category" );]]></searchcode>
